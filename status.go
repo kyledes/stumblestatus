@@ -11,12 +11,16 @@ import (
 )
 
 func main() {
+
 	ip := GetOutboundIP()
-	date := getDateAndTime()
-	battery := batterySection()
+	for {
+		date := getDateAndTime()
+		battery := batterySection()
 
-	fmt.Printf("%s | %s | %s ", battery, ip, date)
+		fmt.Printf("%s 󰤃 %s 󰤃 %s ", battery, ip, date)
+		time.Sleep(10 * time.Second)
 
+	}
 }
 
 func batterySection() string {
@@ -27,10 +31,20 @@ func batterySection() string {
 	}
 	var percent float64
 	var icon string
+	var state string
+	var state_ico string
+
 	for _, battery := range batteries {
 		// 󰚥
 		percent, icon = calculatePercent(battery)
+		state = battery.State.String()
+		if state == "Discharging" {
+			state_ico = "󱐤"
 
+		} else if state == "Charging" {
+			state_ico = "󰚥"
+
+		}
 		// fmt.Print("%\v+", battery.State)
 		// fmt.Printf("Bat%d: ", i)
 		// fmt.Printf("state: %s, ", battery.State.String())
@@ -41,10 +55,9 @@ func batterySection() string {
 		// fmt.Printf("charge rate: %f mW, ", battery.ChargeRate)
 		// fmt.Printf("voltage: %f V, ", battery.Voltage)
 		// fmt.Printf("design voltage: %f V\n", battery.DesignVoltage)
+
 	}
-	icon = mapIcon(80)
-	percent = 82.1
-	return fmt.Sprintf(" %d %s ", int(percent), icon)
+	return fmt.Sprintf(" %d %s %s ", int(percent*100), icon, state_ico)
 }
 
 func calculatePercent(b *battery.Battery) (float64, string) {
@@ -77,9 +90,10 @@ func mapIcon(percent int) string {
 }
 
 func roundToNearestTen(n float64) int {
-	divided := n / 10.0
+	divided := n * 10.0
 	rounded := math.Round(divided)
 	result := rounded * 10.0
+
 	return int(result)
 }
 
