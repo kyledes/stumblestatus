@@ -2,35 +2,52 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math"
-	"unicode/utf16"
+	"net"
+	"time"
 
 	"github.com/distatus/battery"
 )
 
 func main() {
+	ip := GetOutboundIP()
+	date := getDateAndTime()
+	battery := batterySection()
+
+	fmt.Printf("%s | %s | %s ", battery, ip, date)
+
+}
+
+func batterySection() string {
 	batteries, err := battery.GetAll()
 	if err != nil {
 		fmt.Println("Could not get battery info!")
-		return
+		return ""
 	}
-	for i, battery := range batteries {
+	var percent float64
+	var icon string
+	for _, battery := range batteries {
 		// 󰚥
-		percent, icon := calculatePercent(battery)
-		fmt.Print("%\v+", battery.State)
-		fmt.Printf("Bat%d: ", i)
-		fmt.Printf("state: %s, ", battery.State.String())
-		fmt.Printf("current capacity: %f mWh, ", battery.Current)
-		fmt.Printf("last full capacity: %f mWh, ", battery.Full)
-		fmt.Printf("percent %f %U", percent, icon)
-		fmt.Printf("design capacity: %f mWh, ", battery.Design)
-		fmt.Printf("charge rate: %f mW, ", battery.ChargeRate)
-		fmt.Printf("voltage: %f V, ", battery.Voltage)
-		fmt.Printf("design voltage: %f V\n", battery.DesignVoltage)
+		percent, icon = calculatePercent(battery)
+
+		// fmt.Print("%\v+", battery.State)
+		// fmt.Printf("Bat%d: ", i)
+		// fmt.Printf("state: %s, ", battery.State.String())
+		// fmt.Printf("current capacity: %f mWh, ", battery.Current)
+		// fmt.Printf("last full capacity: %f mWh, ", battery.Full)
+		// fmt.Printf("percent %f %s", percent, icon)
+		// fmt.Printf("design capacity: %f mWh, ", battery.Design)
+		// fmt.Printf("charge rate: %f mW, ", battery.ChargeRate)
+		// fmt.Printf("voltage: %f V, ", battery.Voltage)
+		// fmt.Printf("design voltage: %f V\n", battery.DesignVoltage)
 	}
+	icon = mapIcon(80)
+	percent = 82.1
+	return fmt.Sprintf(" %d %s ", int(percent), icon)
 }
 
-func calculatePercent(b *battery.Battery) (float64, []uint16) {
+func calculatePercent(b *battery.Battery) (float64, string) {
 	percent := b.Current / b.Full
 	rounded := roundToNearestTen(percent)
 	icon := mapIcon(rounded)
@@ -38,25 +55,23 @@ func calculatePercent(b *battery.Battery) (float64, []uint16) {
 	return percent, icon
 }
 
-func mapIcon(percent int) []uint16 {
+func mapIcon(percent int) string {
 
 	//󰂄 charging \udb80\udc84
-	bstatus := map[int]map[string][]rune{
-		90: {"icon": []rune("󰂂")},
-		80: {"icon": []rune("󰂁")},
-		70: {"icon": []rune("󰂀")},
-		60: {"icon": []rune("󰁿")},
-		50: {"icon": []rune("󰁾")},
-		40: {"icon": []rune("󰁽")},
-		30: {"icon": []rune("󰁼")},
-		20: {"icon": []rune("󰁻")},
-		10: {"icon": []rune("󰁺")},
+	bstatus := map[int]map[string]string{
+		90: {"icon": "󰂂"},
+		80: {"icon": "󰂁"},
+		70: {"icon": "󰂀"},
+		60: {"icon": "󰁿"},
+		50: {"icon": "󰁾"},
+		40: {"icon": "󰁽"},
+		30: {"icon": "󰁼"},
+		20: {"icon": "󰁻"},
+		10: {"icon": "󰁺"},
 	}
 
-	fmt.Printf("rounded %d", percent)
-	icon := utf16.Encode(bstatus[percent]["icon"])
+	icon := bstatus[percent]["icon"]
 
-	fmt.Printf("icon: %U", icon)
 	return icon
 
 }
@@ -66,6 +81,23 @@ func roundToNearestTen(n float64) int {
 	rounded := math.Round(divided)
 	result := rounded * 10.0
 	return int(result)
+}
+
+func GetOutboundIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
+}
+
+func getDateAndTime() string {
+	t := time.Now()
+	return t.Format(time.Stamp)
 }
 
 // \\udb80\\udc82
