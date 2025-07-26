@@ -7,6 +7,8 @@ import (
 	"net"
 	"time"
 
+	cpustatus "github.com/kyle/stumblestatus/internal"
+
 	"github.com/distatus/battery"
 )
 
@@ -21,6 +23,19 @@ func main() {
 		time.Sleep(10 * time.Second)
 
 	}
+}
+
+//	func main() {
+//		load, err := GetCPULoad()
+//		if err != nil {
+//			fmt.Println("Error:", err)
+//			return
+//		}
+//		fmt.Printf("Current total CPU load: %.2f%%\n", load)
+//	}
+func cpu() {
+
+	cpustatus.GetCPULoad()
 }
 
 func batterySection() string {
